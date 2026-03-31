@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watchdog</title>
+    <style>
+        /* ── Reset & Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #07080d;
+            --surface: rgba(255, 255, 255, 0.04);
+            --surface-hover: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-light: rgba(255, 255, 255, 0.12);
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --text-dim: #52525b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --green: #22c55e;
+            --red: #ef4444;
+            --yellow: #eab308;
+            --orange: #f97316;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── Background gradient ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .header .hostname {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 400;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* ── Stats Bar ── */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+
+        /* ── Category Sections ── */
+        .category {
+            margin-bottom: 28px;
+        }
+
+        .category-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        /* ── Task Cards ── */
+        .task-card {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+
+        .task-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .task-header {
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .task-info h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .task-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .task-meta {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        .run-btn {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .run-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .run-btn:active {
+            transform: scale(0.97);
+        }
+
+        .run-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .run-btn.running {
+            background: var(--yellow);
+            color: #000;
+        }
+
+        /* ── Output Panel ── */
+        .task-output {
+            display: none;
+            border-top: 1px solid var(--border);
+        }
+
+        .task-output.visible {
+            display: block;
+        }
+
+        .output-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: rgba(0,0,0,0.15);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .output-status {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .output-status .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot.success { background: var(--green); }
+        .dot.error { background: var(--red); }
+        .dot.running { background: var(--yellow); animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .output-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .output-actions button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        .output-actions button:hover {
+            border-color: var(--border-light);
+            color: var(--text);
+        }
+
+        .output-content {
+            padding: 12px 16px;
+            max-height: 400px;
+            overflow: auto;
+        }
+
+        .output-content pre {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--text);
+        }
+
+        .output-content pre.error-text {
+            color: var(--red);
+        }
+
+        /* ── Run All Button ── */
+        .run-all-section {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .run-all-btn {
+            padding: 10px 24px;
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .run-all-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .run-all-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .container { padding: 12px 10px; }
+            .header h1 { font-size: 1.1rem; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .task-grid { grid-template-columns: 1fr; }
+            .stat-card { padding: 12px; }
+            .task-header { flex-direction: column; }
+            .run-btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Watchdog</h1>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <a href="/" style="color:var(--accent); text-decoration:none; font-size:0.8rem; padding:6px 14px; border:1px solid rgba(59,130,246,0.25); border-radius:20px; transition:all 0.15s;">Overview</a>
+                <span class="hostname" id="hostname">loading...</span>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">CPU Load</div>
+                <div class="stat-value" id="stat-load">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Memory</div>
+                <div class="stat-value" id="stat-ram">--</div>
+                <div class="stat-bar"><div class="stat-bar-fill" id="ram-bar" style="width:0%; background: var(--accent);"></div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Disk (/)</div>
+                <div class="stat-value" id="stat-disk">--</div>
+                <div class="stat-bar"><div class="stat-bar-fill" id="disk-bar" style="width:0%; background: var(--green);"></div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Uptime</div>
+                <div class="stat-value" id="stat-uptime">--</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="run-all-section">
+            <button class="run-all-btn" onclick="runAll()">Run All Checks</button>
+            <button class="run-all-btn" onclick="collapseAll()">Collapse All</button>
+        </div>
+
+        <!-- Task Categories -->
+        <div id="tasks-container"></div>
+    </div>
+
+    <script>
+        const CATEGORIES = {
+            monitoring: 'Monitoring',
+            disk: 'Disk & Storage',
+            security: 'Security',
+            cleanup: 'Cleanup',
+            inventory: 'Inventory',
+        };
+
+        let tasks = {};
+        let runningTasks = new Set();
+
+        // ── Helper: safely set text content ──
+        function setText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        }
+
+        // ── Load quick stats ──
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/quick-stats');
+                const data = await res.json();
+
+                setText('hostname', data.hostname || '?');
+                setText('stat-load', data.load || '?');
+                setText('stat-ram', data.ram || '?');
+                setText('stat-disk', data.disk || '?');
+                setText('stat-uptime', data.uptime || '?');
+
+                const ramBar = document.getElementById('ram-bar');
+                const diskBar = document.getElementById('disk-bar');
+                ramBar.style.width = (data.ram_pct || 0) + '%';
+                diskBar.style.width = (data.disk_pct || 0) + '%';
+
+                // Color code bars
+                ramBar.style.background = data.ram_pct > 85 ? 'var(--red)' : data.ram_pct > 70 ? 'var(--yellow)' : 'var(--accent)';
+                diskBar.style.background = data.disk_pct > 90 ? 'var(--red)' : data.disk_pct > 75 ? 'var(--yellow)' : 'var(--green)';
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+
+        // ── Build task card using DOM APIs (no innerHTML) ──
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.id = 'card-' + task.key;
+
+            // Header
+            const header = document.createElement('div');
+            header.className = 'task-header';
+
+            const info = document.createElement('div');
+            info.className = 'task-info';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = task.name;
+            info.appendChild(h3);
+
+            const desc = document.createElement('p');
+            desc.textContent = task.description;
+            info.appendChild(desc);
+
+            const meta = document.createElement('div');
+            meta.className = 'task-meta';
+            meta.id = 'meta-' + task.key;
+            meta.textContent = task.last_run ? 'Last: ' + task.last_run : '';
+            info.appendChild(meta);
+
+            const btn = document.createElement('button');
+            btn.className = 'run-btn';
+            btn.id = 'btn-' + task.key;
+            btn.textContent = 'Run';
+            btn.addEventListener('click', () => runTask(task.key));
+
+            header.appendChild(info);
+            header.appendChild(btn);
+            card.appendChild(header);
+
+            // Output panel
+            const output = document.createElement('div');
+            output.className = 'task-output';
+            output.id = 'output-' + task.key;
+
+            const toolbar = document.createElement('div');
+            toolbar.className = 'output-toolbar';
+
+            const status = document.createElement('div');
+            status.className = 'output-status';
+            status.id = 'status-' + task.key;
+
+            const actions = document.createElement('div');
+            actions.className = 'output-actions';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copy';
+            copyBtn.addEventListener('click', () => copyOutput(task.key, copyBtn));
+
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'Close';
+            closeBtn.addEventListener('click', () => toggleOutput(task.key));
+
+            actions.appendChild(copyBtn);
+            actions.appendChild(closeBtn);
+            toolbar.appendChild(status);
+            toolbar.appendChild(actions);
+            output.appendChild(toolbar);
+
+            const contentWrap = document.createElement('div');
+            contentWrap.className = 'output-content';
+            const pre = document.createElement('pre');
+            pre.id = 'pre-' + task.key;
+            contentWrap.appendChild(pre);
+            output.appendChild(contentWrap);
+
+            card.appendChild(output);
+            return card;
+        }
+
+        // ── Load and render tasks ──
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                tasks = await res.json();
+                renderTasks();
+            } catch (e) {
+                console.error('Failed to load tasks:', e);
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasks-container');
+            container.replaceChildren();
+
+            // Group by category
+            const grouped = {};
+            for (const [key, task] of Object.entries(tasks)) {
+                const cat = task.category || 'other';
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push({ key, ...task });
+            }
+
+            // Render each category
+            for (const [catKey, catLabel] of Object.entries(CATEGORIES)) {
+                const catTasks = grouped[catKey];
+                if (!catTasks) continue;
+
+                const section = document.createElement('div');
+                section.className = 'category';
+
+                const title = document.createElement('div');
+                title.className = 'category-title';
+                title.textContent = catLabel;
+                section.appendChild(title);
+
+                const grid = document.createElement('div');
+                grid.className = 'task-grid';
+
+                for (const task of catTasks) {
+                    grid.appendChild(createTaskCard(task));
+                }
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            }
+        }
+
+        // ── Helper: set status with dot ──
+        function setStatus(key, dotClass, text) {
+            const status = document.getElementById('status-' + key);
+            if (!status) return;
+            status.replaceChildren();
+            const dot = document.createElement('span');
+            dot.className = 'dot ' + dotClass;
+            status.appendChild(dot);
+            status.appendChild(document.createTextNode(' ' + text));
+        }
+
+        // ── Run a single task ──
+        async function runTask(key) {
+            if (runningTasks.has(key)) return;
+
+            const btn = document.getElementById('btn-' + key);
+            const output = document.getElementById('output-' + key);
+            const pre = document.getElementById('pre-' + key);
+            const meta = document.getElementById('meta-' + key);
+
+            runningTasks.add(key);
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            btn.classList.add('running');
+            output.classList.add('visible');
+            setStatus(key, 'running', 'Running...');
+            pre.textContent = '';
+            pre.className = '';
+
+            try {
+                const res = await fetch('/api/run/' + encodeURIComponent(key), { method: 'POST' });
+                const data = await res.json();
+
+                let text = '';
+                if (data.output) text += data.output;
+                if (data.error && data.error.trim()) {
+                    text += (text ? '\n\n--- STDERR ---\n' : '') + data.error;
+                }
+                pre.textContent = text || '(no output)';
+
+                const ok = data.returncode === 0;
+                setStatus(key, ok ? 'success' : 'error', (ok ? 'Success' : 'Exit ' + data.returncode) + ' (' + data.elapsed + 's)');
+                if (!ok) pre.classList.add('error-text');
+
+                meta.textContent = 'Last: ' + new Date().toLocaleTimeString();
+            } catch (e) {
+                setStatus(key, 'error', 'Failed');
+                pre.textContent = 'Request failed: ' + e.message;
+                pre.classList.add('error-text');
+            }
+
+            runningTasks.delete(key);
+            btn.disabled = false;
+            btn.textContent = 'Run';
+            btn.classList.remove('running');
+        }
+
+        // ── Run all tasks sequentially ──
+        async function runAll() {
+            const keys = Object.keys(tasks);
+            const allBtns = document.querySelectorAll('.run-all-btn');
+            allBtns.forEach(b => { b.disabled = true; });
+            allBtns[0].textContent = 'Running all...';
+
+            for (const key of keys) {
+                await runTask(key);
+            }
+
+            allBtns[0].textContent = 'Run All Checks';
+            allBtns.forEach(b => { b.disabled = false; });
+            loadStats();
+        }
+
+        function toggleOutput(key) {
+            const output = document.getElementById('output-' + key);
+            output.classList.toggle('visible');
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.task-output').forEach(el => el.classList.remove('visible'));
+        }
+
+        function copyOutput(key, btn) {
+            const pre = document.getElementById('pre-' + key);
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                const original = btn.textContent;
+                btn.textContent = 'Copied';
+                setTimeout(() => { btn.textContent = original; }, 1000);
+            });
+        }
+
+        // ── Init ──
+        loadStats();
+        loadTasks();
+
+        // Refresh stats every 30 seconds
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>

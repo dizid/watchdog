@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watchdog — Overview</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #07080d;
+            --surface: rgba(255, 255, 255, 0.04);
+            --surface-hover: rgba(255, 255, 255, 0.07);
+            --border: rgba(255, 255, 255, 0.08);
+            --border-light: rgba(255, 255, 255, 0.12);
+            --text: #e4e4e7;
+            --text-muted: #71717a;
+            --text-dim: #52525b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.08);
+            --green-border: rgba(34, 197, 94, 0.2);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.08);
+            --red-border: rgba(239, 68, 68, 0.2);
+            --yellow: #eab308;
+            --yellow-bg: rgba(234, 179, 8, 0.08);
+            --yellow-border: rgba(234, 179, 8, 0.2);
+            --blue-bg: rgba(59, 130, 246, 0.08);
+            --blue-border: rgba(59, 130, 246, 0.2);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+
+        .header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            transition: all 0.15s;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            border-color: var(--border-light);
+        }
+
+        /* ── Scan Button ── */
+        .scan-section {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .scan-btn {
+            padding: 12px 28px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .scan-btn:hover { background: var(--accent-hover); }
+        .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .scan-btn.scanning {
+            background: var(--yellow);
+            color: #000;
+        }
+
+        .scan-meta {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* ── Progress Bar ── */
+        .progress-wrap {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .progress-wrap.visible { display: block; }
+
+        .progress-bar {
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        .progress-text {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        /* ── Score Cards ── */
+        .score-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .score-card {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .score-number {
+            font-size: 2rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .score-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .score-card.critical { border-color: var(--red-border); }
+        .score-card.critical .score-number { color: var(--red); }
+        .score-card.warning { border-color: var(--yellow-border); }
+        .score-card.warning .score-number { color: var(--yellow); }
+        .score-card.info { border-color: var(--blue-border); }
+        .score-card.info .score-number { color: var(--accent); }
+        .score-card.health { border-color: var(--green-border); }
+        .score-card.health .score-number { color: var(--green); }
+
+        /* ── Findings ── */
+        .findings-section { margin-bottom: 20px; }
+
+        .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .finding {
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .finding:hover { border-color: var(--border-light); }
+
+        .finding.critical { border-left: 3px solid var(--red); }
+        .finding.warning { border-left: 3px solid var(--yellow); }
+        .finding.info { border-left: 3px solid var(--accent); }
+
+        .finding-main {
+            padding: 14px 16px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .finding-content { flex: 1; min-width: 0; }
+
+        .finding-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .severity-badge {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .severity-badge.critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+        .severity-badge.warning { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+        .severity-badge.info { background: var(--blue-bg); color: var(--accent); border: 1px solid var(--blue-border); }
+
+        .category-tag {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .finding-detail {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .fix-btn {
+            flex-shrink: 0;
+            padding: 7px 16px;
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .fix-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .fix-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .fix-btn.running {
+            background: rgba(234, 179, 8, 0.15);
+            color: var(--yellow);
+            border-color: var(--yellow-border);
+        }
+
+        .fix-btn.done {
+            background: var(--green-bg);
+            color: var(--green);
+            border-color: var(--green-border);
+        }
+
+        /* ── Fix Output ── */
+        .fix-output {
+            display: none;
+            border-top: 1px solid var(--border);
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.12);
+        }
+
+        .fix-output.visible { display: block; }
+
+        .fix-output pre {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.76rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 250px;
+            overflow: auto;
+        }
+
+        .fix-output pre.error-text { color: var(--red); }
+
+        /* ── Confirm Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        .modal {
+            background: #13141a;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            padding: 24px;
+            max-width: 520px;
+            width: 90%;
+        }
+
+        .modal h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .modal-message {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .modal-command {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 16px;
+            color: var(--yellow);
+            word-break: break-all;
+        }
+
+        .modal-sudo {
+            font-size: 0.75rem;
+            color: var(--yellow);
+            margin-bottom: 16px;
+            padding: 8px 12px;
+            background: var(--yellow-bg);
+            border: 1px solid var(--yellow-border);
+            border-radius: var(--radius-sm);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-actions button {
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }
+
+        .btn-cancel {
+            background: var(--surface);
+            color: var(--text-muted);
+            border: 1px solid var(--border) !important;
+        }
+
+        .btn-cancel:hover { border-color: var(--border-light) !important; color: var(--text); }
+
+        .btn-confirm {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-confirm:hover { background: var(--accent-hover); }
+
+        /* ── Empty / Loading ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+
+        .empty-state h2 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .empty-state p { font-size: 0.85rem; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .container { padding: 12px 10px; }
+            .score-bar { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .finding-main { flex-direction: column; }
+            .fix-btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Watchdog Overview</h1>
+            </div>
+            <a href="/checks" class="nav-link">All Checks</a>
+        </div>
+
+        <!-- Scan -->
+        <div class="scan-section">
+            <button class="scan-btn" id="scan-btn" onclick="runScan()">Scan</button>
+            <span class="scan-meta" id="scan-meta"></span>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%"></div></div>
+            <div class="progress-text" id="progress-text">Initializing scan...</div>
+        </div>
+
+        <!-- Score Cards -->
+        <div class="score-bar" id="score-bar" style="display: none;"></div>
+
+        <!-- Findings -->
+        <div id="findings-container">
+            <div class="empty-state">
+                <h2>No results yet</h2>
+                <p>Click Scan to check your system health.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal">
+            <h2 id="modal-title">Confirm Action</h2>
+            <p class="modal-message" id="modal-message"></p>
+            <div class="modal-command" id="modal-command"></div>
+            <div class="modal-sudo" id="modal-sudo" style="display:none;">Requires sudo — you may be prompted for your password in the terminal.</div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="modal-confirm">Run It</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CACHE_KEY = 'watchdog_scan';
+        const CACHE_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
+
+        let currentFindings = [];
+        let pendingAction = null;
+
+        // ── Cache helpers ──
+        function saveCache(data) {
+            const cache = {
+                findings: data.findings,
+                scanned: data.scanned,
+                timestamp: data.timestamp,
+                savedAt: Date.now(),
+                actioned: {},
+            };
+            // Preserve actioned state from previous cache
+            const prev = loadCache();
+            if (prev && prev.actioned) cache.actioned = prev.actioned;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        }
+
+        function loadCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function cacheAge(cache) {
+            if (!cache || !cache.savedAt) return Infinity;
+            return Date.now() - cache.savedAt;
+        }
+
+        function formatAge(ms) {
+            const mins = Math.floor(ms / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + ' min ago';
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return hours + 'h ' + (mins % 60) + 'm ago';
+            return Math.floor(hours / 24) + 'd ago';
+        }
+
+        function markActioned(actionId) {
+            const cache = loadCache();
+            if (!cache) return;
+            if (!cache.actioned) cache.actioned = {};
+            cache.actioned[actionId] = Date.now();
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        }
+
+        // ── Scan ──
+        async function runScan() {
+            const btn = document.getElementById('scan-btn');
+            const progress = document.getElementById('progress-wrap');
+            const fill = document.getElementById('progress-fill');
+            const ptext = document.getElementById('progress-text');
+
+            btn.disabled = true;
+            btn.textContent = 'Scanning...';
+            btn.classList.add('scanning');
+            progress.classList.add('visible');
+            fill.style.width = '10%';
+            ptext.textContent = 'Running checks... (~30-60s)';
+
+            // Simulate progress (real work is server-side)
+            let pct = 10;
+            const timer = setInterval(() => {
+                pct = Math.min(pct + Math.random() * 8, 90);
+                fill.style.width = pct + '%';
+            }, 1500);
+
+            try {
+                const res = await fetch('/api/analyze', { method: 'POST' });
+                const data = await res.json();
+
+                clearInterval(timer);
+                fill.style.width = '100%';
+                ptext.textContent = 'Analysis complete.';
+
+                currentFindings = data.findings || [];
+                saveCache(data);
+                renderResults(data);
+                updateScanMeta();
+            } catch (e) {
+                clearInterval(timer);
+                ptext.textContent = 'Scan failed: ' + e.message;
+            }
+
+            setTimeout(() => { progress.classList.remove('visible'); }, 2000);
+            btn.disabled = false;
+            btn.textContent = 'Rescan';
+            btn.classList.remove('scanning');
+        }
+
+        function updateScanMeta() {
+            const cache = loadCache();
+            const meta = document.getElementById('scan-meta');
+            if (!cache) {
+                meta.textContent = '';
+                return;
+            }
+            const age = cacheAge(cache);
+            const stale = age > CACHE_MAX_AGE_MS;
+            meta.textContent = (stale ? 'Stale — ' : '') +
+                'Scanned ' + formatAge(age) +
+                ' | ' + cache.scanned + ' checks' +
+                (stale ? ' — rescan recommended' : '');
+        }
+
+        // ── Render Results ──
+        function renderResults(data) {
+            const findings = data.findings || [];
+
+            // Count by severity
+            let critical = 0, warning = 0, info = 0;
+            for (const f of findings) {
+                if (f.severity === 'critical') critical++;
+                else if (f.severity === 'warning') warning++;
+                else info++;
+            }
+
+            // Health score: 100 - (critical * 20 + warning * 5)
+            const health = Math.max(0, 100 - (critical * 20) - (warning * 5));
+
+            // Score bar
+            const scoreBar = document.getElementById('score-bar');
+            scoreBar.style.display = '';
+            scoreBar.replaceChildren();
+            scoreBar.appendChild(makeScoreCard(health, 'Health', 'health'));
+            scoreBar.appendChild(makeScoreCard(critical, 'Critical', 'critical'));
+            scoreBar.appendChild(makeScoreCard(warning, 'Warnings', 'warning'));
+            scoreBar.appendChild(makeScoreCard(info, 'Info', 'info'));
+
+            // Findings list
+            const container = document.getElementById('findings-container');
+            container.replaceChildren();
+
+            if (findings.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-state';
+                const h2 = document.createElement('h2');
+                h2.textContent = 'All clear';
+                const p = document.createElement('p');
+                p.textContent = 'No issues found.';
+                empty.appendChild(h2);
+                empty.appendChild(p);
+                container.appendChild(empty);
+                return;
+            }
+
+            // Group: action-required first, then informational
+            const actionable = findings.filter(f => f.action_id);
+            const informational = findings.filter(f => !f.action_id);
+
+            if (actionable.length > 0) {
+                container.appendChild(makeSection('Action Required', actionable));
+            }
+            if (informational.length > 0) {
+                container.appendChild(makeSection('Informational', informational));
+            }
+        }
+
+        function makeScoreCard(value, label, cls) {
+            const card = document.createElement('div');
+            card.className = 'score-card ' + cls;
+            const num = document.createElement('div');
+            num.className = 'score-number';
+            num.textContent = value;
+            const lbl = document.createElement('div');
+            lbl.className = 'score-label';
+            lbl.textContent = label;
+            card.appendChild(num);
+            card.appendChild(lbl);
+            return card;
+        }
+
+        function makeSection(title, findings) {
+            const section = document.createElement('div');
+            section.className = 'findings-section';
+            const h = document.createElement('div');
+            h.className = 'section-title';
+            h.textContent = title;
+            section.appendChild(h);
+
+            for (let i = 0; i < findings.length; i++) {
+                section.appendChild(makeFinding(findings[i], i));
+            }
+            return section;
+        }
+
+        function makeFinding(f, idx) {
+            const el = document.createElement('div');
+            el.className = 'finding ' + f.severity;
+
+            // Main row
+            const main = document.createElement('div');
+            main.className = 'finding-main';
+
+            const content = document.createElement('div');
+            content.className = 'finding-content';
+
+            const titleRow = document.createElement('div');
+            titleRow.className = 'finding-title';
+
+            const badge = document.createElement('span');
+            badge.className = 'severity-badge ' + f.severity;
+            badge.textContent = f.severity;
+            titleRow.appendChild(badge);
+
+            const catTag = document.createElement('span');
+            catTag.className = 'category-tag';
+            catTag.textContent = f.category;
+            titleRow.appendChild(catTag);
+
+            const titleText = document.createTextNode(' ' + f.title);
+            titleRow.appendChild(titleText);
+            content.appendChild(titleRow);
+
+            const detail = document.createElement('div');
+            detail.className = 'finding-detail';
+            detail.textContent = f.detail;
+            content.appendChild(detail);
+
+            main.appendChild(content);
+
+            // Action button
+            if (f.action_id) {
+                const btn = document.createElement('button');
+                btn.className = 'fix-btn';
+                btn.id = 'fix-btn-' + idx;
+
+                // Check if this action was already completed
+                const cache = loadCache();
+                const wasActioned = cache && cache.actioned && cache.actioned[f.action_id];
+                if (wasActioned) {
+                    btn.textContent = 'Done';
+                    btn.classList.add('done');
+                } else {
+                    btn.textContent = f.action_label || 'Fix';
+                }
+                btn.addEventListener('click', () => confirmFix(f.action_id, idx));
+                main.appendChild(btn);
+            }
+
+            el.appendChild(main);
+
+            // Output area
+            const output = document.createElement('div');
+            output.className = 'fix-output';
+            output.id = 'fix-output-' + idx;
+            const pre = document.createElement('pre');
+            pre.id = 'fix-pre-' + idx;
+            output.appendChild(pre);
+            el.appendChild(output);
+
+            return el;
+        }
+
+        // ── Fix Actions with Confirmation ──
+        async function confirmFix(actionId, idx) {
+            try {
+                const res = await fetch('/api/fix-info/' + encodeURIComponent(actionId));
+                const info = await res.json();
+
+                document.getElementById('modal-title').textContent = info.label;
+                document.getElementById('modal-message').textContent = info.confirm;
+                document.getElementById('modal-command').textContent = info.command;
+
+                const sudoEl = document.getElementById('modal-sudo');
+                sudoEl.style.display = info.needs_sudo ? 'block' : 'none';
+
+                pendingAction = { actionId, idx };
+                document.getElementById('modal-overlay').classList.add('visible');
+            } catch (e) {
+                console.error('Failed to get fix info:', e);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('visible');
+            pendingAction = null;
+        }
+
+        document.getElementById('modal-confirm').addEventListener('click', async () => {
+            if (!pendingAction) return;
+            const { actionId, idx } = pendingAction;
+            closeModal();
+
+            const btn = document.getElementById('fix-btn-' + idx);
+            const output = document.getElementById('fix-output-' + idx);
+            const pre = document.getElementById('fix-pre-' + idx);
+
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+            btn.classList.add('running');
+            output.classList.add('visible');
+            pre.textContent = '';
+            pre.className = '';
+
+            try {
+                const res = await fetch('/api/fix/' + encodeURIComponent(actionId), { method: 'POST' });
+                const data = await res.json();
+
+                let text = '';
+                if (data.output) text += data.output;
+                if (data.error && data.error.trim()) {
+                    text += (text ? '\n\n--- STDERR ---\n' : '') + data.error;
+                }
+                pre.textContent = text || '(no output)';
+
+                if (data.returncode !== 0) {
+                    pre.classList.add('error-text');
+                    btn.textContent = 'Failed';
+                } else {
+                    btn.textContent = 'Done';
+                    btn.classList.remove('running');
+                    btn.classList.add('done');
+                    markActioned(actionId);
+                }
+            } catch (e) {
+                pre.textContent = 'Request failed: ' + e.message;
+                pre.classList.add('error-text');
+                btn.textContent = 'Error';
+            }
+
+            btn.disabled = false;
+        });
+
+        // Close modal on overlay click
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal-overlay')) closeModal();
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ── Init: load from cache or auto-scan ──
+        (function init() {
+            const cache = loadCache();
+            if (cache && cache.findings) {
+                const age = cacheAge(cache);
+                currentFindings = cache.findings;
+                renderResults(cache);
+                updateScanMeta();
+                document.getElementById('scan-btn').textContent = 'Rescan';
+
+                // If stale (>1h), show a hint
+                if (age > CACHE_MAX_AGE_MS) {
+                    document.getElementById('scan-meta').style.color = 'var(--yellow)';
+                }
+            } else {
+                // No cache — auto-scan on first visit
+                runScan();
+            }
+            // Keep the age display fresh
+            setInterval(updateScanMeta, 30000);
+        })();
+    </script>
+</body>
+</html>

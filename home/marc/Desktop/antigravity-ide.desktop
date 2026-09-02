@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Antigravity IDE
+Comment=Code Editing. Redefined.
+Exec="/home/marc/.local/share/antigravity-ide/Antigravity IDE/antigravity-ide" %U
+Terminal=false
+Type=Application
+Icon=/home/marc/.local/share/antigravity-ide/Antigravity IDE/resources/app/resources/linux/code.png
+Categories=Utility;TextEditor;Development;IDE;
+StartupWMClass=antigravity-ide

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Antigravity 2.0 — Mini-Course</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --glass: rgba(255,255,255,0.05);
+    --glass-border: rgba(255,255,255,0.1);
+    --accent: #4f9eff;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --warn: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --code-bg: rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,158,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(167,139,250,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 60% at 50% 50%, rgba(52,211,153,0.03) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(79,158,255,0.2), rgba(167,139,250,0.2));
+    border: 1px solid rgba(79,158,255,0.3);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 17px;
+    max-width: 520px;
+    margin: 0 auto 28px;
+  }
+
+  /* Progress bar / module index */
+  .module-index {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+
+  .module-index a {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .module-index a:hover {
+    background: rgba(79,158,255,0.1);
+    border-color: rgba(79,158,255,0.3);
+    color: var(--accent);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .module-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .m1 .module-num { background: rgba(79,158,255,0.2); color: var(--accent); }
+  .m2 .module-num { background: rgba(167,139,250,0.2); color: var(--accent2); }
+  .m3 .module-num { background: rgba(52,211,153,0.2); color: var(--accent3); }
+  .m4 .module-num { background: rgba(251,191,36,0.2); color: var(--warn); }
+  .m5 .module-num { background: rgba(251,113,133,0.2); color: #fb7185; }
+  .m6 .module-num { background: rgba(99,102,241,0.2); color: #818cf8; }
+
+  .card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .tag {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+
+  p { color: var(--text); margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* Key point callout */
+  .callout {
+    background: rgba(79,158,255,0.08);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 15px;
+  }
+
+  .callout.green {
+    background: rgba(52,211,153,0.08);
+    border-color: var(--accent3);
+  }
+
+  .callout.yellow {
+    background: rgba(251,191,36,0.08);
+    border-color: var(--warn);
+  }
+
+  .callout.purple {
+    background: rgba(167,139,250,0.08);
+    border-color: var(--accent2);
+  }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  pre code { color: #e2e8f0; }
+
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .copy-btn:hover { background: rgba(255,255,255,0.18); color: white; }
+  .copy-btn.copied { color: var(--accent3); border-color: var(--accent3); }
+
+  code {
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13.5px;
+    color: #c4b5fd;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* Syntax coloring (manual) */
+  .kw { color: #c084fc; }   /* keywords */
+  .fn { color: #67e8f9; }   /* functions */
+  .str { color: #86efac; }  /* strings */
+  .cm { color: #64748b; }   /* comments */
+  .num { color: #fda4af; }  /* numbers */
+  .var { color: #fde68a; }  /* variables */
+
+  /* Comparison table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  th {
+    background: rgba(255,255,255,0.05);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .check { color: var(--accent3); font-weight: 700; }
+  .cross { color: #fb7185; }
+  .neutral { color: var(--warn); }
+
+  /* Feature grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .feature-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .feature-item .icon { font-size: 20px; margin-bottom: 6px; }
+  .feature-item strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .feature-item span { font-size: 13px; color: var(--muted); }
+
+  /* Pricing cards */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .price-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+
+  .price-card.recommended {
+    border-color: rgba(79,158,255,0.4);
+    background: rgba(79,158,255,0.06);
+  }
+
+  .price-card .plan-name {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .price-card .price {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+
+  .price-card .price-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .price-card ul {
+    list-style: none;
+    text-align: left;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .price-card ul li { padding: 3px 0; }
+  .price-card ul li::before { content: '→ '; color: var(--accent); }
+
+  .rec-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+  }
+
+  /* Steps */
+  .steps { margin: 16px 0; }
+
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(79,158,255,0.15);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-content strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .step-content p { font-size: 14px; color: var(--muted); margin-bottom: 0; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--glass-border);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* Anchor targets */
+  [id] { scroll-margin-top: 24px; }
+
+  @media (max-width: 600px) {
+    .container { padding: 24px 16px 60px; }
+    .card { padding: 22px 18px; }
+    .pricing-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="badge">Google I/O 2026 · Launched May 19</div>
+    <h1>Google Antigravity 2.0</h1>
+    <p class="subtitle">A practical mini-course — from zero to running your first AI agent team in under an hour.</p>
+    <nav class="module-index">
+      <a href="#m1">1. What is it?</a>
+      <a href="#m2">2. Three Components</a>
+      <a href="#m3">3. Getting Started</a>
+      <a href="#m4">4. Multi-Agent</a>
+      <a href="#m5">5. Commands & Controls</a>
+      <a href="#m6">6. Pricing</a>
+    </nav>
+  </header>
+
+  <!-- Module 1 -->
+  <div class="card m1" id="m1">
+    <div class="card-header">
+      <div class="module-num">1</div>
+      <h2>What is Google Antigravity 2.0?</h2>
+      <span class="tag">Concept</span>
+    </div>
+
+    <p>Antigravity 2.0 is Google's <strong>agent-first coding platform</strong> — not an IDE plugin, not a chatbot. It's a complete rethink of how software gets built.</p>
+
+    <div class="callout">
+      <strong>The paradigm shift:</strong> You stop writing code. You become a <em>project manager</em> who delegates to a team of AI agents running in parallel.
+    </div>
+
+    <p>Instead of prompting a single AI one task at a time, Antigravity 2.0 spins up a <strong>manager agent</strong> that decomposes your goal into subtasks, then dispatches specialized sub-agents — one for frontend, one for backend, one for tests — all running simultaneously.</p>
+
+    <div class="grid">
+      <div class="feature-item">
+        <div class="icon">⚡</div>
+        <strong>289 tokens/sec</strong>
+        <span>Official speed on Gemini 3.5 Flash. Users report 1,300+ tokens/sec in practice.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🤖</div>
+        <strong>Multi-agent parallel</strong>
+        <span>Multiple agents work simultaneously — context window limits no longer block you.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🔒</div>
+        <strong>Isolated sandboxes</strong>
+        <span>Agents execute code in secure Linux environments. Your machine stays clean.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🌐</div>
+        <strong>Multi-model</strong>
+        <span>Gemini 3.5 Flash, Claude Sonnet & Opus 4.6, GPT-OSS-120b — all available.</span>
+      </div>
+    </div>
+
+    <div class="callout yellow">
+      <strong>vs Claude Code:</strong> Antigravity is faster and has a broader platform (desktop + CLI + SDK). Claude Code scores higher on SWE-Bench for complex reasoning. Use both — they're complementary.
+    </div>
+  </div>
+
+  <!-- Module 2 -->
+  <div class="card m2" id="m2">
+    <div class="card-header">
+      <div class="module-num">2</div>
+      <h2>The Three Components</h2>
+      <span class="tag">Architecture</span>
+    </div>
+
+    <p>Antigravity 2.0 ships as three separate tools. You don't need all three — pick what fits your workflow.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>What it is</th>
+          <th>Best for</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Desktop App</strong></td>
+          <td>VS Code fork with deep agent integration, chat-first interface</td>
+          <td>Visual workflow, beginners, managing multiple agent sessions</td>
+        </tr>
+        <tr>
+          <td><strong>CLI</strong></td>
+          <td>Go-based terminal tool — replaces Gemini CLI (deprecated June 18)</td>
+          <td>Terminal-native developers, scripting, CI/CD pipelines</td>
+        </tr>
+        <tr>
+          <td><strong>SDK</strong></td>
+          <td>Python, TypeScript, Go libraries for programmatic agent control</td>
+          <td>Embedding agents in your own tools, custom automation, CI integration</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout green">
+      <strong>Recommendation:</strong> Start with the <strong>CLI</strong>. It works alongside VS Code, Vim, JetBrains — whatever editor you already use. The desktop app is optional.
+    </div>
+
+    <p><strong>Coming from Gemini CLI?</strong> It's deprecated as of June 18, 2026. Migrate in one command:</p>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code>antigravity migrate --from-gemini-cli</code></pre>
+  </div>
+
+  <!-- Module 3 -->
+  <div class="card m3" id="m3">
+    <div class="card-header">
+      <div class="module-num">3</div>
+      <h2>Getting Started</h2>
+      <span class="tag">Hands-on</span>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Install the CLI</strong>
+          <p>One-liner install for Linux:</p>
+        </div>
+      </div>
+    </div>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="cm"># Linux</span>
+curl -fsSL https://antigravity.dev/install.sh | bash
+
+<span class="cm"># macOS</span>
+brew install google/antigravity/antigravity
+
+<span class="cm"># Windows</span>
+winget install Google.Antigravity</code></pre>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Authenticate</strong>
+          <p>Opens Google OAuth in your browser.</p>
+        </div>
+      </div>
+    </div>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code>antigravity auth login</code></pre>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Configure your project</strong>
+          <p>Create <code>.antigravity.yaml</code> in your project root:</p>
+        </div>
+      </div>
+    </div>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="var">model</span>: gemini-3.5-flash
+<span class="var">sandbox</span>: <span class="kw">true</span>          <span class="cm"># run code in isolated Linux env</span>
+<span class="var">auto_approve</span>: <span class="kw">false</span>  <span class="cm"># IMPORTANT: review changes before they apply</span>
+<span class="var">test_command</span>: npm test</code></pre>
+
+    <div class="callout yellow">
+      <strong>Beginner tip:</strong> Always start with <code>auto_approve: false</code>. You'll see every file change before it's written. Once you trust the agent's judgment on your codebase, you can flip it to <code>true</code>.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Run your first task</strong>
+          <p>Natural language — describe the goal, not the steps.</p>
+        </div>
+      </div>
+    </div>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="cm"># Run from inside your project directory</span>
+antigravity <span class="str">"Add input validation to the login form and write tests for it"</span></code></pre>
+
+    <p>The manager agent will plan the work, dispatch sub-agents, and present you with a diff to approve before anything is written to disk.</p>
+  </div>
+
+  <!-- Module 4 -->
+  <div class="card m4" id="m4">
+    <div class="card-header">
+      <div class="module-num">4</div>
+      <h2>Multi-Agent Orchestration</h2>
+      <span class="tag">Core Feature</span>
+    </div>
+
+    <p>This is the killer feature. Single-agent tools hit context window limits on large tasks. Antigravity solves it with a <strong>manager + sub-agent hierarchy</strong>.</p>
+
+    <div class="callout purple">
+      <strong>How it works:</strong><br>
+      Manager agent receives your goal → decomposes into subtasks → dispatches parallel specialized agents (frontend, backend, test) → collects results → presents unified diff.
+    </div>
+
+    <p>You can also use the <strong>SDK</strong> to build custom orchestration:</p>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="kw">from</span> antigravity <span class="kw">import</span> <span class="fn">Agent</span>, <span class="fn">Task</span>
+
+<span class="cm"># Instantiate an agent (uses gemini-3.5-flash by default)</span>
+agent = <span class="fn">Agent</span>(model=<span class="str">"gemini-3.5-flash"</span>)
+
+<span class="cm"># Define a task with optional constraints</span>
+task = <span class="fn">Task</span>(
+    description=<span class="str">"Refactor the authentication module for better error handling"</span>,
+    workspace=<span class="str">"/path/to/project"</span>,
+    constraints=[<span class="str">"Don't modify the public API"</span>, <span class="str">"Keep existing tests passing"</span>]
+)
+
+result = agent.<span class="fn">execute</span>(task)
+<span class="fn">print</span>(result.summary)</code></pre>
+
+    <p><strong>Managed Agents</strong> (cloud execution) let you spin up an agent in an isolated Linux sandbox with a single API call — no local environment setup needed:</p>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="kw">from</span> antigravity <span class="kw">import</span> <span class="fn">ManagedAgent</span>
+
+<span class="cm"># Runs in Google's isolated Linux environment</span>
+agent = <span class="fn">ManagedAgent</span>.create(
+    model=<span class="str">"gemini-3.5-flash"</span>,
+    tools=[<span class="str">"code_execution"</span>, <span class="str">"file_management"</span>, <span class="str">"web_browse"</span>]
+)
+result = agent.<span class="fn">run</span>(<span class="str">"Analyze this codebase and generate a test coverage report"</span>)</code></pre>
+
+    <div class="grid">
+      <div class="feature-item">
+        <div class="icon">📁</div>
+        <strong>File management</strong>
+        <span>Agents read, write, and organize files across your project.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🌍</div>
+        <strong>Web browsing</strong>
+        <span>Agents can fetch docs, check APIs, and look up current info.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">🔧</div>
+        <strong>Function calling</strong>
+        <span>Connect agents to your own tools and internal APIs.</span>
+      </div>
+      <div class="feature-item">
+        <div class="icon">📊</div>
+        <strong>Structured output</strong>
+        <span>Get typed JSON responses, not just raw text.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 5 -->
+  <div class="card m5" id="m5">
+    <div class="card-header">
+      <div class="module-num">5</div>
+      <h2>Slash Commands &amp; Controls</h2>
+      <span class="tag">Power User</span>
+    </div>
+
+    <p>Antigravity ships with built-in slash commands and control mechanisms to shape how agents behave.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Command / Feature</th>
+          <th>What it does</th>
+          <th>When to use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/goal</code></td>
+          <td>Silent execution mode — agent works without asking for confirmations</td>
+          <td>Trusted tasks on non-critical code</td>
+        </tr>
+        <tr>
+          <td><code>/grill-me</code></td>
+          <td>Agent asks clarifying questions before starting, then proceeds</td>
+          <td>Ambiguous tasks where requirements need tightening</td>
+        </tr>
+        <tr>
+          <td><code>/browser</code></td>
+          <td>Opens a headless browser for visual testing and screenshots</td>
+          <td>Frontend work, UI bug verification</td>
+        </tr>
+        <tr>
+          <td><code>/voice</code></td>
+          <td>Native voice input — speak your task instead of typing</td>
+          <td>Mobile use, hands-busy workflows</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><strong>JSON Hooks (Interceptors)</strong> — add checkpoints before risky operations:</p>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="cm"># .antigravity.yaml — require human approval before deleting files</span>
+<span class="var">hooks</span>:
+  - <span class="var">event</span>: file_delete
+    <span class="var">action</span>: require_approval
+  - <span class="var">event</span>: schema_migration
+    <span class="var">action</span>: require_approval
+  - <span class="var">event</span>: git_push
+    <span class="var">action</span>: block  <span class="cm"># never let agents push without you</span></code></pre>
+
+    <p><strong>Scheduled Tasks</strong> — cron-like automation:</p>
+
+    <pre><button class="copy-btn" onclick="copyCode(this)">copy</button><code><span class="cm"># Run dependency audit every Monday at 9am</span>
+<span class="var">scheduled_tasks</span>:
+  - <span class="var">cron</span>: <span class="str">"0 9 * * 1"</span>
+    <span class="var">task</span>: <span class="str">"Audit npm dependencies for security vulnerabilities and open a PR with fixes"</span>
+
+  - <span class="var">cron</span>: <span class="str">"0 8 * * *"</span>
+    <span class="var">task</span>: <span class="str">"Run full test suite and post results to Slack #dev-alerts"</span></code></pre>
+
+    <div class="callout">
+      <strong>Integration tip:</strong> Antigravity connects natively to Google AI Studio, Android Studio, and Firebase — you don't need to configure these manually if you're already signed into Google.
+    </div>
+  </div>
+
+  <!-- Module 6 -->
+  <div class="card m6" id="m6">
+    <div class="card-header">
+      <div class="module-num">6</div>
+      <h2>Pricing — Which Plan?</h2>
+      <span class="tag">Decision</span>
+    </div>
+
+    <p>Compute limits refresh every 5 hours. Pay-as-you-go credits available for overages.</p>
+
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="plan-name">Individual</div>
+        <div class="price">Free</div>
+        <div class="price-sub">No credit card</div>
+        <ul>
+          <li>Gemini 3.5 Flash</li>
+          <li>Claude Sonnet &amp; Opus 4.6</li>
+          <li>GPT-OSS-120b</li>
+          <li>Unlimited tab completions</li>
+          <li>Weekly rate limits</li>
+        </ul>
+      </div>
+      <div class="price-card recommended">
+        <div class="rec-badge">Best start</div>
+        <div class="plan-name">AI Pro</div>
+        <div class="price">$20</div>
+        <div class="price-sub">per month</div>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Higher rate limits</li>
+          <li>Flexible credit pool</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="plan-name">AI Ultra</div>
+        <div class="price">$100</div>
+        <div class="price-sub">per month</div>
+        <ul>
+          <li>5× limits vs Pro</li>
+          <li>Flexible credit pool</li>
+          <li>Daily heavy use</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <div class="plan-name">AI Ultra+</div>
+        <div class="price">$200</div>
+        <div class="price-sub">per month (was $250)</div>
+        <ul>
+          <li>20× limits vs Pro</li>
+          <li>Full-time agent teams</li>
+          <li>Enterprise workloads</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout green">
+      <strong>Recommendation:</strong> Start on <strong>Free</strong>. Hit the limits → upgrade to <strong>Pro ($20)</strong>. If you're running agents all day as your primary workflow → <strong>Ultra ($100)</strong>. Ultra+ is for teams or heavy CI usage.
+    </div>
+
+    <p>For organizations, the <strong>Organization plan</strong> runs through Google Cloud with consumption-based API pricing and access to Antigravity 2.0 + Gemini Enterprise Agent Platform.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Use case</th>
+          <th>Recommended plan</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Learning / side projects</td><td class="check">Free</td></tr>
+        <tr><td>Daily dev assistant (part-time)</td><td class="neutral">Pro $20</td></tr>
+        <tr><td>Full-time agent-driven dev</td><td class="neutral">Ultra $100</td></tr>
+        <tr><td>Team / CI / heavy automation</td><td>Ultra+ $200 or Org</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>Sources: <a href="https://techcrunch.com/2026/05/19/google-launches-antigravity-2-0-with-an-updated-desktop-app-and-cli-tool-at-io-2026/">TechCrunch</a> · <a href="https://www.marktechpost.com/2026/05/19/google-launches-antigravity-2-0-at-i-o-2026-a-standalone-agent-first-platform-with-cli-sdk-managed-execution-and-enterprise-support/">MarkTechPost</a> · <a href="https://9to5google.com/2026/05/19/google-antigravity-agentic-developer-suite/">9to5Google</a> · <a href="https://www.agentupdate.ai/blog/google-antigravity-2-0-explained/">AgentUpdate.ai</a> · <a href="https://www.aimadetools.com/blog/antigravity-2-complete-guide/">AIMadeTools</a></p>
+    <p style="margin-top:8px; color:#475569;">Compiled May 2026 · antigravity.google</p>
+  </footer>
+
+</div>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.parentElement;
+    const code = pre.querySelector('code').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('copied');
+      }, 1800);
+    });
+  }
+</script>
+</body>
+</html>

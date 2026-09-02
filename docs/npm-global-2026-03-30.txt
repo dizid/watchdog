@@ -1,0 +1,10 @@
+/home/marc/.nvm/versions/node/v22.20.0/lib
+├── @anthropic-ai/claude-code@2.1.59
+├── @netlify/mcp@1.15.1
+├── corepack@0.34.0
+├── firebase-tools@15.5.1
+├── netlify-cli@23.12.3
+├── npm@10.9.3
+├── pnpm@10.33.0
+└── typescript@5.7.3
+
